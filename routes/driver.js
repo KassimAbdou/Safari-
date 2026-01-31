@@ -1,9 +1,9 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const controller = require("../controllers/driverController");
+import controller from "../controllers/driverController.js";
 
 router.post("/location", controller.updateLocation);
 router.get("/nearby", controller.getNearbyDrivers);
 router.get("/earnings", controller.getEarnings);
 
-module.exports = router;
+export default router;

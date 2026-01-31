@@ -1,6 +1,6 @@
-const express = require('express');
-const auth = require('../middleware/auth');
-const controller = require('../controllers/transportController');
+import express from 'express';
+import auth from '../middleware/auth.js';
+import controller from '../controllers/transportController.js';
 
 const router = express.Router();
 
@@ -11,4 +11,4 @@ router.get('/drivers/nearby', controller.nearbyDrivers);
 router.post('/rides', auth, controller.createRide);
 router.get('/rides/history', auth, controller.getRideHistory);
 
-module.exports = router;
+export default router;

@@ -1,14 +1,15 @@
-require('dotenv').config();
-const express = require('express');
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import authRoutes from './routes/auth.js';
+import userRoutes from './routes/users.js';
+import chatRoutes from './routes/chat.js';
+import driverRoutes from './routes/driver.js';
+import geoRoutes from './routes/geo.js';
+import rideRoutes from './routes/ride.js';
+import transportRoutes from './routes/transport.js';
+
 const app = express();
-const cors = require('cors');
-const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/users');
-const chatRoutes = require('./routes/chat');
-const driverRoutes = require('./routes/driver');
-const geoRoutes = require('./routes/geo');
-const rideRoutes = require('./routes/ride');
-const transportRoutes = require('./routes/transport');
 
 app.use(cors());
 app.use(express.json());
@@ -21,7 +22,5 @@ app.use('/api/geo', geoRoutes);
 app.use('/api/ride', rideRoutes);
 app.use('/api/transport', transportRoutes);
 
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// Exporter l'app pour Vercel
+export default app;

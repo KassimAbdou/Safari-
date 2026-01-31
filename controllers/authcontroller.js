@@ -1,11 +1,11 @@
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const { PrismaClient } = require("@prisma/client");
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 /* REGISTER */
-exports.register = async (req, res) => {
+export const register = async (req, res) => {
   try {
     const { firstName, lastName, email, phone, island, role, password } = req.body;
 
@@ -55,7 +55,7 @@ exports.register = async (req, res) => {
 };
 
 /* LOGIN */
-exports.login = async (req, res) => {
+export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -90,7 +90,7 @@ exports.login = async (req, res) => {
 };
 
 /* ME */
-exports.me = async (req, res) => {
+export const me = async (req, res) => {
   try {
     const auth = req.headers.authorization;
     if (!auth || !auth.startsWith("Bearer ")) {
@@ -129,7 +129,7 @@ exports.refresh = async (req, res) => {
 };
 
 /* LOGOUT */
-exports.logout = async (req, res) => {
+export const logout = async (req, res) => {
   const { refreshToken } = req.body;
   await prisma.user.updateMany({
     where: { refreshToken },
@@ -140,7 +140,7 @@ exports.logout = async (req, res) => {
 // ==========================================
 // UPDATE PROFILE
 // ==========================================
-exports.updateProfile = async (req, res) => {
+export const updateProfile = async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -186,7 +186,7 @@ exports.updateProfile = async (req, res) => {
 /* ================================
    Trouver chauffeur par téléphone
 ================================ */
-exports.findDriver = async (req, res) => {
+export const findDriver = async (req, res) => {
   try {
     const { phone } = req.query;
 

@@ -1,6 +1,6 @@
-const express = require("express");
-const { body } = require("express-validator");
-const controller = require("../controllers/authController");
+import express from "express";
+import { body } from "express-validator";
+import controller from "../controllers/authController.js";
 
 const router = express.Router();
 
@@ -27,4 +27,4 @@ router.put('/update', controller.updateProfile);
 // Trouver chauffeur par téléphone
 router.get('/find-driver', controller.findDriver);
 
-module.exports = router;
+export default router;
