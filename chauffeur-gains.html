@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Mes gains - Chauffeur</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg?v=2">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+:root{
+  --neon:#00ff9c;
+  --neon-blue:#00d9ff;
+  --dark:#050b10;
+  --glass:rgba(255,255,255,0.12);
+  --blur:blur(18px);
+}
+
+/* RESET */
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Poppins',sans-serif;
+}
+
+/* BODY FUTUR */
+body{
+  background:
+    radial-gradient(circle at top, #0c1f2d, #020409 70%);
+  min-height:100vh;
+  color:white;
+  padding:20px;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.card {
+  background: var(--glass);
+  backdrop-filter: var(--blur);
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border: 1px solid rgba(255,255,255,.08);
+}
+
+.total {
+  font-size: 22px;
+  font-weight: bold;
+  color: var(--neon);
+  text-align: center;
+  text-shadow: 0 0 10px var(--neon);
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg,var(--neon),var(--neon-blue));
+  color: #00140d;
+  font-size: 16px;
+  margin-top: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: .35s;
+}
+
+button:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 0 25px rgba(0,255,156,.7);
+}
+</style>
+</head>
+
+<body>
+
+<h2>💰 Mes gains</h2>
+
+<div class="card">
+  <p>🚕 Courses aujourd’hui : <b id="ridesToday">0</b></p>
+  <p>📆 Courses cette semaine : <b id="ridesWeek">0</b></p>
+</div>
+
+<div class="card total">
+  Total : <span id="total">0</span> KMF
+</div>
+
+<button onclick="goBack()">⬅️ Retour</button>
+
+<script>
+/* =============================
+   Sécurité
+============================= */
+const token = localStorage.getItem("accessToken");
+if (!token) {
+  window.location.href = "login.html";
+}
+
+/* =============================
+   Charger gains depuis API
+============================= */
+async function loadEarnings() {
+  try {
+    const res = await fetch("http://localhost:4000/api/driver/earnings", {
+      headers: { Authorization: "Bearer " + token }
+    });
+
+    if (!res.ok) throw new Error();
+
+    const gains = await res.json();
+
+    document.getElementById("ridesToday").innerText = gains.today;
+    document.getElementById("ridesWeek").innerText = gains.week;
+    document.getElementById("total").innerText = gains.total;
+  } catch (err) {
+    alert("Erreur chargement gains");
+    // Fallback simulation
+    document.getElementById("ridesToday").innerText = 4;
+    document.getElementById("ridesWeek").innerText = 12;
+    document.getElementById("total").innerText = 18000;
+  }
+}
+
+loadEarnings();
+
+/* =============================
+   Retour chauffeur
+============================= */
+function goBack() {
+  window.location.href = "chauffeur.html";
+}
+</script>
+
+</body>
+</html>

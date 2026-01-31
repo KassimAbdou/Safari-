@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Safari Ngema CM — Mon Compte</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --neon:#00ff9c;
+  --neon-blue:#00d9ff;
+  --dark:#050b10;
+  --glass:rgba(255,255,255,0.12);
+  --blur:blur(18px);
+}
+
+/* RESET */
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Poppins',sans-serif;
+}
+
+/* BODY FUTUR */
+body{
+  background:
+    radial-gradient(circle at top, #0c1f2d, #020409 70%);
+  min-height:100vh;
+  padding:10px;
+  color:white;
+}
+
+/* CONTAINER GLASS */
+.container{
+  max-width:420px;
+  margin:40px auto;
+  background:var(--glass);
+  backdrop-filter:var(--blur);
+  padding:24px 22px;
+  border-radius:22px;
+  box-shadow:0 0 35px rgba(0,255,156,.4);
+  border:1px solid rgba(255,255,255,.08);
+}
+
+/* TITRE */
+h2{
+  text-align:center;
+  margin-bottom:24px;
+  font-weight:700;
+  color:var(--neon);
+  text-shadow:0 0 15px var(--neon);
+}
+
+/* INPUT GROUP */
+.input-group{
+  margin-bottom:18px;
+}
+
+label{
+  font-size:.85em;
+  font-weight:600;
+  color:#ccc;
+}
+
+/* INPUTS GLASS */
+input,
+select{
+  width:100%;
+  padding:12px;
+  margin-top:6px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.2);
+  font-size:.9em;
+  background:rgba(255,255,255,.1);
+  color:white;
+  transition:.25s;
+}
+
+input::placeholder,
+select{
+  color:#aaa;
+}
+
+input:focus,
+select:focus{
+  outline:none;
+  border-color:var(--neon);
+  box-shadow:0 0 0 3px rgba(0,255,156,.18);
+  background:rgba(255,255,255,.15);
+}
+
+/* BUTTONS FUTUR */
+button{
+  width:100%;
+  background:linear-gradient(135deg,var(--neon),var(--neon-blue));
+  border:none;
+  color:#00140d;
+  padding:14px;
+  border-radius:30px;
+  font-size:.95em;
+  font-weight:700;
+  cursor:pointer;
+  box-shadow:
+    0 0 25px rgba(0,255,156,.7),
+    inset 0 0 12px rgba(255,255,255,.4);
+  margin-top:10px;
+  transition:.35s;
+}
+
+button:hover{
+  transform:translateY(-3px) scale(1.05);
+  box-shadow:0 0 45px rgba(0,255,156,1);
+}
+
+/* LOGOUT */
+.logout{
+  background:linear-gradient(135deg,#ff6b6b,#ff5252);
+  box-shadow:
+    0 0 25px rgba(255,107,107,.7),
+    inset 0 0 12px rgba(255,255,255,.4);
+}
+
+.logout:hover{
+  box-shadow:0 0 45px rgba(255,107,107,1);
+}
+
+/* BACK */
+.back{
+  background:var(--glass);
+  color:white;
+  box-shadow:0 0 15px rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.08);
+}
+
+.back:hover{
+  background:rgba(255,255,255,.2);
+  transform:translateY(-2px);
+}
+
+/* MOBILE */
+@media(max-width:480px){
+  .container{
+    margin:20px auto;
+    padding:20px 18px;
+  }
+
+  h2{
+    font-size:1.2em;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h2>👤 Mon Compte</h2>
+
+  <form id="accountForm">
+
+    <div class="input-group">
+      <label>Prénom</label>
+      <input type="text" id="firstName" required>
+    </div>
+
+    <div class="input-group">
+      <label>Nom</label>
+      <input type="text" id="lastName" required>
+    </div>
+
+    <div class="input-group">
+      <label>Email</label>
+      <input type="email" id="email" disabled>
+    </div>
+
+    <div class="input-group">
+      <label>Téléphone</label>
+      <input type="text" id="phone" required>
+    </div>
+
+    <div class="input-group">
+      <label>Île</label>
+      <select id="island">
+        <option value="Ngazidja">Ngazidja</option>
+        <option value="Anjouan">Anjouan</option>
+        <option value="Mohéli">Mohéli</option>
+      </select>
+    </div>
+
+    <button type="submit">💾 Enregistrer</button>
+  </form>
+
+  <button class="logout" id="logoutBtn">🚪 Déconnexion</button>
+  <button class="back" onclick="goBack()">⬅ Retour</button>
+</div>
+
+<script>
+const API_URL = "http://localhost:4000/api/auth";
+const token = localStorage.getItem("accessToken");
+
+if (!token) {
+  window.location.replace("login.html");
+}
+
+/* ==========================
+   Charger profil
+========================== */
+fetch(`${API_URL}/me`, {
+  headers: { Authorization: "Bearer " + token }
+})
+.then(res => {
+  if (!res.ok) throw new Error();
+  return res.json();
+})
+.then(user => {
+  // Sauvegarde sécurité
+  localStorage.setItem("boltUserData", JSON.stringify(user));
+
+  document.getElementById("firstName").value = user.firstName;
+  document.getElementById("lastName").value = user.lastName;
+  document.getElementById("email").value = user.email;
+  document.getElementById("phone").value = user.phone;
+  document.getElementById("island").value = user.island;
+})
+.catch(() => {
+  alert("Session expirée");
+  localStorage.clear();
+  window.location.replace("login.html");
+});
+
+/* ==========================
+   Sauvegarde profil
+========================== */
+document.getElementById("accountForm").addEventListener("submit", async e => {
+  e.preventDefault();
+
+  const userData = JSON.parse(localStorage.getItem("boltUserData"));
+
+  const data = {
+    firstName: document.getElementById("firstName").value.trim(),
+    lastName: document.getElementById("lastName").value.trim(),
+    phone: document.getElementById("phone").value.trim(),
+    island: document.getElementById("island").value
+  };
+
+  const res = await fetch(`${API_URL}/update`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + token
+    },
+    body: JSON.stringify(data)
+  });
+
+  const result = await res.json();
+
+  if (!res.ok) {
+    alert(result.error || "Erreur lors de la mise à jour");
+    return;
+  }
+
+  // ✅ Mise à jour locale complète
+  const updatedUser = { ...userData, ...result.user };
+  localStorage.setItem("boltUserData", JSON.stringify(updatedUser));
+
+  alert("Profil mis à jour avec succès ✅");
+
+  // ✅ Redirection selon rôle
+  if (updatedUser.role === "driver") {
+    window.location.replace("chauffeur.html");
+  } else {
+    window.location.replace("accueil.html");
+  }
+});
+
+/* ==========================
+   Déconnexion
+========================== */
+document.getElementById("logoutBtn").onclick = () => {
+  localStorage.clear();
+  window.location.replace("login.html");
+};
+
+/* ==========================
+   Retour selon rôle
+========================== */
+function goBack() {
+  const userData = JSON.parse(localStorage.getItem("boltUserData"));
+
+  if (userData?.role === "driver") {
+    window.location.replace("chauffeur.html");
+  } else {
+    window.location.replace("accueil.html");
+  }
+}
+</script>
+
+</body>
+</html>

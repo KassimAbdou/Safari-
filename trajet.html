@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demander un trajet - Safari Ngema CM</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg?v=2">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<style>
+:root{
+  --neon:#00ff9c;
+  --neon-blue:#00d9ff;
+  --dark:#050b10;
+  --glass:rgba(255,255,255,0.12);
+  --blur:blur(18px);
+}
+
+/* RESET */
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Poppins',sans-serif;
+}
+
+/* BODY FUTUR */
+body{
+  background:
+    radial-gradient(circle at top, #0c1f2d, #020409 70%);
+  height:100vh;
+  overflow:hidden;
+  color:white;
+  display:flex;
+  flex-direction:column;
+}
+
+/* HEADER */
+header {
+  background: var(--glass);
+  backdrop-filter: var(--blur);
+  padding: 15px;
+  text-align: center;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 0 30px rgba(0,255,156,.12);
+}
+
+/* MAP */
+#map {
+  flex: 1;
+  position: relative;
+  filter: contrast(1.1) saturate(1.2);
+}
+
+/* FORM PANEL */
+.form-panel {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: var(--glass);
+  backdrop-filter: var(--blur);
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  width: 300px;
+  z-index: 1000;
+  border: 1px solid rgba(255,255,255,.08);
+}
+
+.form-panel h3 {
+  margin-top: 0;
+  color: white;
+}
+
+input, button {
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 5px;
+  box-sizing: border-box;
+  background: rgba(255,255,255,0.1);
+  color: white;
+}
+
+input::placeholder {
+  color: rgba(255,255,255,0.7);
+}
+
+button {
+  background: linear-gradient(135deg,var(--neon),var(--neon-blue));
+  color: #00140d;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+  transition: .35s;
+}
+
+button:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 0 25px rgba(0,255,156,.7);
+}
+
+button:disabled {
+  background: #555;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* STATUS */
+.status {
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(0,255,156,0.1);
+  border-radius: 5px;
+  border: 1px solid rgba(0,255,156,0.3);
+  display: none;
+}
+
+/* LEAFLET POPUP */
+.leaflet-popup-content-wrapper{
+  background:rgba(10,20,25,.95);
+  color:white;
+  border-radius:18px;
+  box-shadow:0 0 35px rgba(0,255,156,.4);
+}
+
+.leaflet-popup-content button{
+  margin-top:8px;
+  padding:8px 14px;
+  border:none;
+  border-radius:20px;
+  background:linear-gradient(135deg,var(--neon),var(--neon-blue));
+  color:#00140d;
+  font-size:.75em;
+  font-weight:700;
+  cursor:pointer;
+}
+
+/* CAR MARKER */
+.car-marker {
+  font-size: 20px;
+  text-align: center;
+  line-height: 25px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* MOBILE */
+@media(max-width:768px){
+  .form-panel {
+    width: 90%;
+    left: 5%;
+  }
+}
+</style>
+</head>
+<body>
+
+<header>🚕 Demander un trajet</header>
+
+<div id="map"></div>
+
+<div class="form-panel">
+  <h3>📍 Détails du trajet</h3>
+
+  <label>Point de départ:</label>
+  <input type="text" id="pickupInput" placeholder="Localisation GPS obligatoire" readonly />
+
+  <label>Destination:</label>
+  <input type="text" id="dropoffInput" placeholder="Cliquez sur la carte" readonly />
+
+  <label>Numéro du chauffeur:</label>
+  <input type="tel" id="driverPhone" placeholder="Ex: +269 XXX XX XX" />
+
+  <button id="requestRide" disabled>🚕 Commander</button>
+
+  <div class="status" id="status">
+    <p id="statusText">Préparez votre trajet...</p>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+const API_BASE = 'http://localhost:4000/api';
+const token = localStorage.getItem('accessToken');
+
+if (!token) {
+  window.location.replace('login.html');
+}
+
+let map;
+let pickupMarker = null;
+let dropoffMarker = null;
+let pickupLatLng = null;
+let dropoffLatLng = null;
+
+// Icônes personnalisées
+const pickupIcon = L.divIcon({
+  html: '📍',
+  className: 'marker-icon',
+  iconSize: [30, 30],
+  iconAnchor: [15, 15]
+});
+
+const dropoffIcon = L.divIcon({
+  html: '🏁',
+  className: 'marker-icon',
+  iconSize: [30, 30],
+  iconAnchor: [15, 15]
+});
+
+// Initialiser la carte
+function initMap() {
+  map = L.map('map').setView([-11.7167, 43.25], 12);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  // Obtenir la position actuelle (obligatoire)
+  getCurrentLocation();
+
+  // Clic sur la carte pour définir la destination
+  map.on('click', function(e) {
+    if (dropoffLatLng) {
+      // Si destination déjà définie, permettre de la changer
+      setDropoff(e.latlng);
+    } else {
+      setDropoff(e.latlng);
+    }
+  });
+}
+
+function getCurrentLocation() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(function(pos) {
+      const latLng = L.latLng(pos.coords.latitude, pos.coords.longitude);
+      setPickup(latLng);
+      map.setView(latLng, 15);
+    }, function(err) {
+      alert('GPS requis pour cette application. Erreur: ' + err.message);
+      window.location.href = 'accueil.html'; // Rediriger si GPS non disponible
+    }, { enableHighAccuracy: true });
+  } else {
+    alert('Géolocalisation non supportée. Application non utilisable.');
+    window.location.href = 'accueil.html';
+  }
+}
+
+function setPickup(latLng) {
+  pickupLatLng = latLng;
+  if (pickupMarker) map.removeLayer(pickupMarker);
+  pickupMarker = L.marker(latLng, { icon: pickupIcon }).addTo(map);
+  document.getElementById('pickupInput').value = `${latLng.lat.toFixed(6)}, ${latLng.lng.toFixed(6)}`;
+  checkForm();
+}
+
+function setDropoff(latLng) {
+  dropoffLatLng = latLng;
+  if (dropoffMarker) map.removeLayer(dropoffMarker);
+  dropoffMarker = L.marker(latLng, { icon: dropoffIcon }).addTo(map);
+  document.getElementById('dropoffInput').value = `${latLng.lat.toFixed(6)}, ${latLng.lng.toFixed(6)}`;
+  checkForm();
+}
+
+function checkForm() {
+  const btn = document.getElementById('requestRide');
+  const phone = document.getElementById('driverPhone').value.trim();
+  btn.disabled = !(pickupLatLng && dropoffLatLng && phone);
+}
+
+document.getElementById('driverPhone').addEventListener('input', checkForm);
+
+document.getElementById('requestRide').addEventListener('click', async function() {
+  if (!pickupLatLng || !dropoffLatLng) return;
+
+  const phone = document.getElementById('driverPhone').value.trim();
+  if (!phone) return;
+
+  const status = document.getElementById('status');
+  const statusText = document.getElementById('statusText');
+  status.style.display = 'block';
+  statusText.textContent = 'Recherche du chauffeur...';
+
+  try {
+    // Trouver le chauffeur par numéro
+    const driverRes = await fetch(API_BASE + '/auth/find-driver?phone=' + encodeURIComponent(phone), {
+      headers: { Authorization: 'Bearer ' + token }
+    });
+
+    if (!driverRes.ok) {
+      statusText.textContent = 'Chauffeur non trouvé avec ce numéro.';
+      return;
+    }
+
+    const driver = await driverRes.json();
+
+    // Créer la course avec le chauffeur assigné
+    const rideRes = await fetch(API_BASE + '/ride', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({
+        pickupLat: pickupLatLng.lat,
+        pickupLng: pickupLatLng.lng,
+        dropoffLat: dropoffLatLng.lat,
+        dropoffLng: dropoffLatLng.lng,
+        driverId: driver.id
+      })
+    });
+
+    if (rideRes.ok) {
+      const ride = await rideRes.json();
+      statusText.textContent = 'Course demandée à ' + driver.firstName + ' ' + driver.lastName + ' ! ID: ' + ride.id;
+    } else {
+      statusText.textContent = 'Erreur lors de la demande.';
+    }
+  } catch (err) {
+    statusText.textContent = 'Erreur réseau.';
+  }
+});
+
+// Initialisation
+initMap();
+</script>
+
+</body>
+</html>

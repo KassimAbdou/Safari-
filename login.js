@@ -1,0 +1,42 @@
+const API_URL = "http://localhost:4000/api/auth";
+
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const data = {
+    email: document.getElementById("email").value.trim(),
+    password: document.getElementById("password").value.trim(),
+  };
+
+  try {
+    const res = await fetch(`${API_URL}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      alert(result.message || "Erreur de connexion");
+      return;
+    }
+
+    // ✅ STOCKAGE CORRECT
+    localStorage.setItem("accessToken", result.accessToken);
+    localStorage.setItem("refreshToken", result.refreshToken);
+    localStorage.setItem("boltUserData", JSON.stringify(result.user));
+
+    // ✅ REDIRECTION GARANTIE
+   const role = result.user.role;
+
+if (role === "driver") {
+  window.location.href = "chauffeur.html";
+} else {
+  window.location.href = "accueil.html";
+}
+
+  } catch (err) {
+    alert("Erreur de connexion au serveur");
+  }
+});

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="boltGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00ff9c;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00d9ff;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="45" fill="url(#boltGrad)" stroke="#050b10" stroke-width="2"/>
+  <!-- Car body -->
+  <rect x="20" y="40" width="60" height="25" rx="5" fill="#fff"/>
+  <!-- Wheels -->
+  <circle cx="30" cy="70" r="8" fill="#333"/>
+  <circle cx="70" cy="70" r="8" fill="#333"/>
+  <!-- Bolt symbol -->
+  <path d="M45 25 L50 15 L55 25 L50 35 Z" fill="#00ff9c"/>
+  <!-- Comores text -->
+  <text x="50" y="85" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#fff">COMORES</text>
+</svg>

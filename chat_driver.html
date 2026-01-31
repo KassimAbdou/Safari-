@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Chat côté Chauffeur - Safari Ngema CM</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+
+<script>
+  const userDataStr = localStorage.getItem("boltUserData");
+  if (!userDataStr) {
+    alert("Vous n'êtes pas connecté. Redirection vers la page de connexion.");
+    window.location.href = "index.html";
+  }
+</script>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --neon:#00ff9c;
+  --neon-blue:#00d9ff;
+  --dark:#050b10;
+  --glass:rgba(255,255,255,0.12);
+  --blur:blur(18px);
+}
+
+/* RESET */
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Poppins',sans-serif;
+}
+
+/* BODY FUTUR */
+body{
+  background:
+    radial-gradient(circle at top, #0c1f2d, #020409 70%);
+  height:100vh;
+  overflow:hidden;
+  color:white;
+  display:flex;
+  flex-direction:column;
+}
+
+/* HEADER GLASS */
+header{
+  background:var(--glass);
+  backdrop-filter:var(--blur);
+  color:white;
+  padding:15px;
+  font-weight:600;
+  font-size:18px;
+  text-align:center;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  box-shadow:0 0 30px rgba(0,255,156,.12);
+}
+
+/* CONTAINER */
+#container{
+  display:flex;
+  flex:1;
+}
+
+/* CLIENT LIST GLASS */
+#clientList{
+  width:120px;
+  background:var(--glass);
+  backdrop-filter:var(--blur);
+  overflow-y:auto;
+  border-right:1px solid rgba(255,255,255,.08);
+}
+
+#clientList div{
+  padding:10px;
+  cursor:pointer;
+  border-bottom:1px solid rgba(255,255,255,.05);
+  transition:.3s;
+}
+
+#clientList div:hover{
+  background:rgba(0,255,156,.1);
+}
+
+#clientList div.active{
+  background:var(--neon);
+  color:#00140d;
+  font-weight:600;
+}
+
+/* CHAT AREA */
+#chatArea{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+}
+
+/* CHAT CONTAINER */
+#chatContainer{
+  flex:1;
+  padding:10px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  overflow-y:auto;
+}
+
+/* MESSAGES GLASS */
+.message{
+  padding:10px 14px;
+  border-radius:18px;
+  max-width:75%;
+  position:relative;
+  word-wrap:break-word;
+  font-size:15px;
+  backdrop-filter:var(--blur);
+}
+
+.message.user{
+  background:linear-gradient(135deg,var(--neon),var(--neon-blue));
+  color:#00140d;
+  align-self:flex-end;
+  border-bottom-right-radius:0;
+  box-shadow:0 0 15px rgba(0,255,156,.3);
+}
+
+.message.other{
+  background:var(--glass);
+  color:white;
+  align-self:flex-start;
+  border-bottom-left-radius:0;
+  border:1px solid rgba(255,255,255,.08);
+}
+
+.time{
+  font-size:10px;
+  color:#555;
+  position:absolute;
+  bottom:2px;
+  right:8px;
+}
+
+/* INPUT AREA GLASS */
+#inputArea{
+  display:flex;
+  padding:10px;
+  background:var(--glass);
+  backdrop-filter:var(--blur);
+  border-top:1px solid rgba(255,255,255,.08);
+}
+
+#inputMsg{
+  flex-grow:1;
+  padding:12px 15px;
+  border-radius:25px;
+  border:1px solid rgba(255,255,255,.2);
+  background:rgba(255,255,255,.1);
+  color:white;
+  font-size:16px;
+  outline:none;
+}
+
+#inputMsg::placeholder{
+  color:#aaa;
+}
+
+#sendBtn{
+  background:linear-gradient(135deg,var(--neon),var(--neon-blue));
+  border:none;
+  color:#00140d;
+  font-weight:600;
+  font-size:16px;
+  padding:0 20px;
+  margin-left:10px;
+  border-radius:25px;
+  cursor:pointer;
+  transition:.35s;
+  box-shadow:0 0 15px rgba(0,255,156,.3);
+}
+
+#sendBtn:hover{
+  transform:translateY(-2px) scale(1.05);
+  box-shadow:0 0 25px rgba(0,255,156,.7);
+}
+
+/* MODAL GLASS */
+#clientProfileModal{
+  display:none;
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  background:var(--glass);
+  backdrop-filter:var(--blur);
+  padding:20px;
+  border-radius:12px;
+  box-shadow:0 0 35px rgba(0,255,156,.4);
+  z-index:9999;
+  width:300px;
+  border:1px solid rgba(255,255,255,.08);
+}
+
+#clientProfileModal h3{
+  margin-top:0;
+  color:var(--neon);
+}
+
+#clientProfileModal p{
+  color:white;
+}
+
+#clientProfileModal button{
+  margin-top:10px;
+  padding:6px 12px;
+  cursor:pointer;
+  border-radius:8px;
+  border:none;
+  background:linear-gradient(135deg,var(--neon),var(--neon-blue));
+  color:#00140d;
+  font-weight:600;
+  transition:.3s;
+}
+
+#clientProfileModal button:hover{
+  transform:translateY(-2px);
+  box-shadow:0 0 20px rgba(0,255,156,.5);
+}
+</style>
+</head>
+<body>
+
+<header>Chat Chauffeur - Vos clients</header>
+
+<div id="container">
+  <div id="clientList"></div>
+
+  <div id="chatArea">
+    <div id="chatContainer"></div>
+    <div id="inputArea">
+      <input type="text" id="inputMsg" placeholder="Tapez votre message..." />
+      <button id="sendBtn">Envoyer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal profil client -->
+<div id="clientProfileModal">
+  <h3 id="modalClientName"></h3>
+  <p>Téléphone: <span id="modalClientPhone"></span></p>
+  <p>Île: <span id="modalClientIsland"></span></p>
+  <button id="closeProfile">Fermer</button>
+</div>
+
+<script>
+const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:4000/api' : '/api';
+const token = localStorage.getItem('accessToken');
+let me = null;
+let currentClientId = null;
+let pollHandle = null;
+
+const clientListDiv = document.getElementById('clientList');
+const chatContainer = document.getElementById('chatContainer');
+const inputMsg = document.getElementById('inputMsg');
+const sendBtn = document.getElementById('sendBtn');
+
+const clientProfileModal = document.getElementById('clientProfileModal');
+const modalClientName = document.getElementById('modalClientName');
+const modalClientPhone = document.getElementById('modalClientPhone');
+const modalClientIsland = document.getElementById('modalClientIsland');
+const closeProfile = document.getElementById('closeProfile');
+
+// Authentification
+async function loadMe() {
+  if (!token) {
+    alert("Vous n'êtes pas connecté.");
+    window.location.href = "login.html";
+    return;
+  }
+  try {
+    const r = await fetch(API_BASE + '/auth/me', { headers: { Authorization: 'Bearer ' + token } });
+    if (!r.ok) throw new Error();
+    me = await r.json();
+    if (me.role !== 'driver') {
+      alert("Accès réservé aux chauffeurs");
+      window.location.href = "accueil.html";
+    }
+    return me;
+  } catch (e) {
+    alert("Session expirée");
+    localStorage.clear();
+    window.location.href = "login.html";
+  }
+}
+
+// Charger liste des conversations
+async function loadConversations() {
+  try {
+    const res = await fetch(API_BASE + '/chat', { headers: { Authorization: 'Bearer ' + token } });
+    if (!res.ok) return [];
+    const conversations = await res.json();
+    return conversations;
+  } catch (e) {
+    console.error(e);
+    return [];
+  }
+}
+
+// Afficher liste clients
+function renderClientList(conversations) {
+  clientListDiv.innerHTML = '';
+  conversations.forEach(conv => {
+    const div = document.createElement('div');
+    div.textContent = conv.name;
+    div.dataset.clientId = conv.id;
+    div.dataset.clientName = conv.name;
+    div.dataset.clientPhone = conv.phone;
+    div.dataset.clientIsland = conv.island;
+    div.onclick = () => selectClient(conv.id, conv.name, conv.phone, conv.island);
+    if (conv.id === currentClientId) div.classList.add('active');
+    clientListDiv.appendChild(div);
+  });
+}
+
+// Sélectionner un client
+function selectClient(clientId, name, phone, island) {
+  currentClientId = clientId;
+  localStorage.setItem('chatPeerId', clientId);
+  localStorage.setItem('chatPeerName', name);
+  renderClientList(conversations); // Need to pass conversations
+  loadMessages();
+  restartPolling();
+}
+
+// Charger messages
+async function loadMessages() {
+  if (!currentClientId) return;
+  try {
+    const res = await fetch(API_BASE + '/chat/' + currentClientId, { headers: { Authorization: 'Bearer ' + token } });
+    if (!res.ok) return;
+    const messages = await res.json();
+    renderMessages(messages);
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+// Afficher messages
+function renderMessages(messages) {
+  chatContainer.innerHTML = '';
+  messages.forEach(msg => {
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'message ' + (msg.senderId === me.id ? 'user' : 'other');
+    msgDiv.textContent = msg.content;
+
+    const timeDiv = document.createElement('div');
+    timeDiv.className = 'time';
+    const time = new Date(msg.createdAt);
+    timeDiv.textContent = time.getHours().toString().padStart(2, '0') + ':' + time.getMinutes().toString().padStart(2, '0');
+    msgDiv.appendChild(timeDiv);
+
+    chatContainer.appendChild(msgDiv);
+  });
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+// Modal profil client
+function showClientProfile() {
+  if (!currentClientId) return;
+  const conv = conversations.find(c => c.id === currentClientId);
+  if (!conv) return;
+  modalClientName.textContent = conv.name;
+  modalClientPhone.textContent = conv.phone;
+  modalClientIsland.textContent = conv.island;
+  clientProfileModal.style.display = 'block';
+}
+
+closeProfile.onclick = () => { clientProfileModal.style.display = 'none'; };
+
+// Double-click on client to show profile
+clientListDiv.addEventListener('dblclick', e => {
+  if (e.target.dataset.clientId) {
+    showClientProfile();
+  }
+});
+
+// Envoyer message
+async function sendMessage(content) {
+  if (!currentClientId || !content) return;
+  try {
+    await fetch(API_BASE + '/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ receiverId: currentClientId, content })
+    });
+    loadMessages(); // Reload to show sent message
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+// Events
+sendBtn.onclick = () => {
+  const msg = inputMsg.value.trim();
+  if (!msg) return;
+  inputMsg.value = '';
+  sendMessage(msg);
+};
+
+inputMsg.addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendBtn.click();
+});
+
+// Modal profil client
+closeProfile.onclick = () => { clientProfileModal.style.display = 'none'; };
+
+// Polling
+function restartPolling() {
+  if (pollHandle) clearInterval(pollHandle);
+  pollHandle = setInterval(loadMessages, 2500);
+}
+
+// Initialisation
+let conversations = [];
+async function init() {
+  await loadMe();
+  conversations = await loadConversations();
+  renderClientList(conversations);
+  if (conversations.length > 0) {
+    selectClient(conversations[0].id, conversations[0].name, conversations[0].phone, conversations[0].island);
+  }
+}
+
+init();
+</script>
+
+</body>
+</html>

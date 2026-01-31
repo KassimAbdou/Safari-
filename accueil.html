@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Safari Ngema CM</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+<style>
+:root{
+  --neon:#00ff9c;
+  --neon-blue:#00d9ff;
+  --dark:#050b10;
+  --glass:rgba(255,255,255,0.12);
+  --blur:blur(18px);
+}
+
+/* RESET */
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Poppins',sans-serif;
+}
+
+/* BODY FUTUR */
+body{
+  background:
+    radial-gradient(circle at top, #0c1f2d, #020409 70%);
+  height:100vh;
+  overflow:hidden;
+  color:white;
+  display:flex;
+  flex-direction:column;
+}
+
+/* USER INFO – GLASS FUTUR */
+.user-info{
+  background:var(--glass);
+  backdrop-filter:var(--blur);
+  padding:16px 20px;
+  font-size:.85em;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  box-shadow:0 0 30px rgba(0,255,156,.12);
+  z-index:10;
+}
+
+/* MAP */
+#map{
+  flex-grow:1;
+  filter:contrast(1.1) saturate(1.2);
+}
+
+/* ACTION BUTTONS */
+.btns-center{
+  display:flex;
+  justify-content:center;
+  gap:16px;
+  padding:18px;
+  background:linear-gradient(
+    to top,
+    rgba(0,0,0,.85),
+    rgba(0,0,0,.4)
+  );
+  backdrop-filter:var(--blur);
+  box-shadow:0 -20px 60px rgba(0,255,156,.15);
+}
+
+/* BOUTON FUTUR */
+.btn{
+  background:linear-gradient(135deg,var(--neon),var(--neon-blue));
+  color:#00140d;
+  border:none;
+  padding:14px 26px;
+  border-radius:40px;
+  font-weight:700;
+  font-size:.9em;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  box-shadow:
+    0 0 25px rgba(0,255,156,.7),
+    inset 0 0 12px rgba(255,255,255,.4);
+  transition:.35s;
+}
+
+.btn:hover{
+  transform:translateY(-6px) scale(1.05);
+  box-shadow:0 0 45px rgba(0,255,156,1);
+}
+
+/* NAVIGATION BAS */
+nav.bottom-nav{
+  display:flex;
+  justify-content:space-around;
+  padding:14px 0;
+  background:rgba(0,0,0,.75);
+  backdrop-filter:var(--blur);
+  box-shadow:0 -10px 40px rgba(0,0,0,.8);
+}
+
+nav.bottom-nav button{
+  background:none;
+  border:none;
+  color:#9aa;
+  font-size:.75em;
+  letter-spacing:.5px;
+  cursor:pointer;
+  transition:.3s;
+}
+
+nav.bottom-nav button.active{
+  color:var(--neon);
+  text-shadow:0 0 10px var(--neon);
+  font-weight:700;
+}
+
+/* LEAFLET POPUP FUTUR */
+.leaflet-popup-content-wrapper{
+  background:rgba(10,20,25,.95);
+  color:white;
+  border-radius:18px;
+  box-shadow:0 0 35px rgba(0,255,156,.4);
+}
+
+.leaflet-popup-content button{
+  margin-top:8px;
+  padding:8px 14px;
+  border:none;
+  border-radius:20px;
+  background:linear-gradient(135deg,var(--neon),var(--neon-blue));
+  color:#00140d;
+  font-size:.75em;
+  font-weight:700;
+  cursor:pointer;
+}
+
+/* CAR MARKER STYLE */
+.car-marker {
+  font-size: 20px;
+  text-align: center;
+  line-height: 25px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* MOBILE */
+@media(max-width:768px){
+  .btn{
+    padding:12px 20px;
+    font-size:.8em;
+  }
+}
+
+@keyframes float {
+  0%{transform:translateY(0)}
+  50%{transform:translateY(-6px)}
+  100%{transform:translateY(0)}
+}
+</style>
+</head>
+
+<body>
+
+<!-- Bandeau utilisateur -->
+<div class="user-info" id="userInfo">Chargement du profil...</div>
+
+<div id="map"></div>
+
+<div class="btns-center">
+  <button id="btnShowDrivers" class="btn">Chauffeurs</button>
+  <button id="btnChat" class="btn">Chat</button>
+  <button id="btnTrajet" class="btn">Trajet</button>
+</div>
+
+<nav class="bottom-nav">
+  <button class="active">Accueil</button>
+  <button id="navTrajet">Trajet</button>
+  <button id="navCompte">Compte</button>
+</nav>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+  /* ===================================================
+     🔐 PROTECTION DE LA PAGE
+  =================================================== */
+
+  const API_URL = "http://localhost:4000/api/auth";
+  const accessToken = localStorage.getItem("accessToken");
+
+  if (!accessToken) {
+    window.location.replace("login.html");
+  }
+
+  /* ===================================================
+     📡 RÉCUPÉRATION UTILISATEUR CONNECTÉ
+  =================================================== */
+  fetch("http://localhost:4000/api/auth/me", {
+  headers: { Authorization: "Bearer " + accessToken }
+})
+
+  fetch(`${API_URL}/me`, {
+    headers: {
+      Authorization: "Bearer " + accessToken
+    }
+  })
+  .then(res => {
+    if (!res.ok) {
+      localStorage.clear();
+      window.location.replace("login.html");
+      return;
+    }
+    return res.json();
+  })
+  .then(user => {
+    if (!user || !user.email) {
+      localStorage.clear();
+      window.location.replace("login.html");
+      return;
+    }
+
+    // Affichage utilisateur
+    document.getElementById("userInfo").innerHTML = `
+      👤 <b>${user.firstName} ${user.lastName}</b>
+      | 📧 ${user.email}
+      | 📱 ${user.phone}
+      | 🏝 ${user.island}
+      | 🔖 ${user.role === "driver" ? "Chauffeur" : "Client"}
+    `;
+
+    initMap(user);
+  })
+  .catch(() => {
+    localStorage.clear();
+    window.location.replace("login.html");
+  });
+
+  /* ===================================================
+     🗺 CARTE LEAFLET
+  =================================================== */
+
+  const gps = {
+    Ngazidja: [-11.7167, 43.25],
+    Anjouan: [-12.2333, 44.4167],
+    Mohéli: [-12.3, 43.7333]
+  };
+
+  let map;
+
+  // Icône personnalisée pour les chauffeurs (petite voiture)
+  const carIcon = L.divIcon({
+    html: '🚗',
+    className: 'car-marker',
+    iconSize: [25, 25],
+    iconAnchor: [12, 12]
+  });
+
+  let driverMarkers = []; // Pour stocker les marqueurs des chauffeurs
+
+  function initMap(user) {
+    const coords = gps[user.island] || gps.Ngazidja;
+
+    map = L.map("map").setView(coords, 12);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap"
+    }).addTo(map);
+
+    if (user.role === "driver" && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(pos => {
+        const { latitude, longitude } = pos.coords;
+        L.marker([latitude, longitude]).addTo(map)
+          .bindPopup("📍 Votre position");
+        map.setView([latitude, longitude], 14);
+      });
+    } else {
+      L.marker(coords).addTo(map)
+        .bindPopup("📍 Zone sélectionnée");
+    }
+  }
+
+  /* ===================================================
+     🚕 CHAUFFEURS SIMULÉS
+  =================================================== */
+
+  function generateNearbyDrivers(lat, lon, count = 5) {
+    return Array.from({ length: count }, (_, i) => ({
+      name: `Chauffeur ${i + 1}`,
+      lat: lat + (Math.random() - 0.5) * 0.02,
+      lon: lon + (Math.random() - 0.5) * 0.02,
+      phone: "+269 3XX XXX XX"
+    }));
+  }
+
+  document.getElementById("btnShowDrivers").addEventListener("click", () => {
+    const center = map.getCenter();
+    generateNearbyDrivers(center.lat, center.lng).forEach(driver => {
+      L.marker([driver.lat, driver.lon], { icon: carIcon })
+        .addTo(map)
+        .bindPopup(`
+  🚖 <b>${driver.name}</b><br>
+  📞 ${driver.phone}<br><br>
+
+  <button onclick="callDriver('${driver.phone}')">📞 Appeler</button>
+  <button onclick="openChat(${driver.id})">💬 Chat</button>
+`);
+    });
+  });
+
+  // Charger les chauffeurs depuis l'API
+
+async function loadDrivers() {
+  try {
+    const res = await fetch("http://localhost:4000/api/driver/nearby");
+
+    if (!res.ok) {
+      alert("Erreur lors du chargement des chauffeurs");
+      return;
+    }
+
+    const drivers = await res.json();
+
+    // Supprimer les anciens marqueurs
+    driverMarkers.forEach(marker => map.removeLayer(marker));
+    driverMarkers = [];
+
+    drivers.forEach(d => {
+      const marker = L.marker([d.latitude, d.longitude], { icon: carIcon })
+        .addTo(map)
+        .bindPopup(`
+          🚖 ${d.user.firstName}<br>
+          📞 ${d.user.phone}
+        `);
+      driverMarkers.push(marker);
+    });
+
+    // Démarrer la mise à jour en temps réel
+    startRealTimeUpdates();
+
+  } catch (error) {
+    console.error("Erreur chauffeurs:", error);
+  }
+}
+
+function startRealTimeUpdates() {
+  setInterval(async () => {
+    try {
+      const res = await fetch("http://localhost:4000/api/driver/nearby");
+      if (!res.ok) return;
+
+      const drivers = await res.json();
+
+      // Mettre à jour les positions
+      drivers.forEach((d, index) => {
+        if (driverMarkers[index]) {
+          driverMarkers[index].setLatLng([d.latitude, d.longitude]);
+        }
+      });
+    } catch (error) {
+      console.error("Erreur mise à jour chauffeurs:", error);
+    }
+  }, 10000); // Mise à jour toutes les 10 secondes
+}
+  /* ===================================================
+     🔗 NAVIGATION
+  =================================================== */
+
+  document.getElementById("btnChat").onclick = () => window.location.href = "chat.html";
+  document.getElementById("btnTrajet").onclick = () => window.location.href = "trajet.html";
+  document.getElementById("navCompte").onclick = () => window.location.href = "compte.html";
+  document.getElementById("btnShowDrivers").onclick = loadDrivers;
+
+  // 📞 Appeler le chauffeur
+function callDriver(phone) {
+  window.location.href = `tel:${phone}`;
+}
+
+// 💬 Ouvrir chat privé
+function openChat(driverId) {
+  localStorage.setItem("chatDriverId", driverId);
+  window.location.href = "chat.html";
+}
+</script>
+
+</body>
+</html>

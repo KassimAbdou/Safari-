@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Safari Chauffeur</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg?v=2">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+<style>
+:root{
+  --neon:#00ff9c;
+  --neon-blue:#00d9ff;
+  --dark:#050b10;
+  --glass:rgba(255,255,255,0.12);
+  --blur:blur(18px);
+}
+
+/* RESET */
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Poppins',sans-serif;
+}
+
+/* BODY FUTUR */
+body{
+  background:
+    radial-gradient(circle at top, #0c1f2d, #020409 70%);
+  height:100vh;
+  overflow:hidden;
+  color:white;
+  display:flex;
+  flex-direction:column;
+}
+
+/* HEADER */
+header {
+  background: var(--glass);
+  backdrop-filter: var(--blur);
+  color: white;
+  padding: 15px;
+  text-align: center;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 0 30px rgba(0,255,156,.12);
+}
+
+/* STATUS */
+.status {
+  text-align: center;
+  padding: 10px;
+  background: var(--glass);
+  backdrop-filter: var(--blur);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.status span {
+  font-weight: bold;
+}
+
+/* MAP */
+#map {
+  height: 55vh;
+  filter: contrast(1.1) saturate(1.2);
+}
+
+/* PANEL */
+.panel {
+  background: var(--glass);
+  backdrop-filter: var(--blur);
+  padding: 15px;
+  border-top: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 0 30px rgba(0,255,156,.12);
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg,var(--neon),var(--neon-blue));
+  color: #00140d;
+  font-size: 16px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: .35s;
+}
+
+button:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 0 25px rgba(0,255,156,.7);
+}
+
+button.offline {
+  background: #ccc;
+  color: #333;
+  transform: none;
+}
+
+/* MODAL */
+#ridesModal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+}
+
+#ridesModal > div {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  background: var(--glass);
+  backdrop-filter: var(--blur);
+  padding: 20px;
+  border-radius: 10px;
+  width: 80%;
+  max-width: 400px;
+  border: 1px solid rgba(255,255,255,.08);
+}
+
+#ridesModal h3 {
+  margin-top: 0;
+  color: white;
+}
+
+#ridesList div {
+  border: 1px solid rgba(255,255,255,.2);
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 5px;
+  background: rgba(255,255,255,0.05);
+}
+
+#ridesList button {
+  width: auto;
+  margin-top: 5px;
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+/* CAR MARKER STYLE */
+.car-marker {
+  font-size: 20px;
+  text-align: center;
+  line-height: 25px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* LEAFLET POPUP */
+.leaflet-popup-content-wrapper{
+  background:rgba(10,20,25,.95);
+  color:white;
+  border-radius:18px;
+  box-shadow:0 0 35px rgba(0,255,156,.4);
+}
+
+.leaflet-popup-content button{
+  margin-top:8px;
+  padding:8px 14px;
+  border:none;
+  border-radius:20px;
+  background:linear-gradient(135deg,var(--neon),var(--neon-blue));
+  color:#00140d;
+  font-size:.75em;
+  font-weight:700;
+  cursor:pointer;
+}
+
+/* MOBILE */
+@media(max-width:768px){
+  #map { height: 50vh; }
+}
+</style>
+</head>
+
+<body>
+
+<header> Mode Chauffeur</header>
+
+<div class="status">
+Statut : <span id="driverStatus">Hors ligne</span>
+</div>
+
+<div id="map"></div>
+
+<div class="panel">
+  <button id="toggleStatus">Se mettre en ligne</button>
+  <button onclick="goCompte()"> Compte</button>
+  <button onclick="logout()">Déconnexion</button>
+</div>
+
+<!-- Modal courses disponibles -->
+<div id="ridesModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;">
+  <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:20px; border-radius:10px; width:80%; max-width:400px;">
+    <h3>Mes courses</h3>
+    <div id="ridesList"></div>
+    <button onclick="closeRidesModal()">Fermer</button>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+const API_AUTH = "http://localhost:4000/api/auth";
+const API_DRIVER = "http://localhost:4000/api/driver";
+const token = localStorage.getItem("accessToken");
+
+if (!token) {
+  window.location.replace("login.html");
+}
+
+let map;
+let marker;
+let isOnline = false;
+let watchId = null;
+
+/* ================================
+   Coordonnées îles
+================================ */
+const gps = {
+  Ngazidja: [-11.7167, 43.25],
+  Anjouan: [-12.2333, 44.4167],
+  Mohéli:  [-12.3, 43.7333]
+};
+
+// Icône voiture pour le chauffeur
+const carIcon = L.divIcon({
+  html: '🚗',
+  className: 'car-marker',
+  iconSize: [25, 25],
+  iconAnchor: [12, 12]
+});
+
+/* ================================
+   Charger chauffeur (SOURCE UNIQUE)
+================================ */
+async function loadDriver() {
+  try {
+    const res = await fetch(`${API_AUTH}/me`, {
+      headers: { Authorization: "Bearer " + token }
+    });
+
+    if (!res.ok) throw new Error();
+
+    const user = await res.json();
+
+    if (user.role !== "driver") {
+      alert("Accès réservé aux chauffeurs");
+      window.location.replace("accueil.html");
+      return;
+    }
+
+    // 🔥 Toujours synchroniser après modif compte
+    localStorage.setItem("boltUserData", JSON.stringify(user));
+
+    initMap(user);
+    startTracking();
+
+  } catch (err) {
+    alert("Session expirée");
+    localStorage.clear();
+    window.location.replace("login.html");
+  }
+}
+
+loadDriver();
+
+/* ================================
+   Carte chauffeur (île dynamique)
+================================ */
+function initMap(user) {
+  const coords = gps[user.island] || gps.Ngazidja;
+
+  if (map) map.remove();
+
+  map = L.map("map").setView(coords, 13);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap"
+  }).addTo(map);
+}
+
+/* ================================
+   GPS + ENVOI POSITION BACKEND
+================================ */
+function startTracking() {
+  if (!navigator.geolocation) {
+    alert("GPS non supporté");
+    return;
+  }
+
+  watchId = navigator.geolocation.watchPosition(
+    async pos => {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+
+      if (!marker) {
+        marker = L.marker([lat, lon], { icon: carIcon }).addTo(map);
+        map.setView([lat, lon], 14);
+      } else {
+        marker.setLatLng([lat, lon]);
+      }
+
+      // 🚀 ENVOI AU SERVEUR UNIQUEMENT SI EN LIGNE
+      if (isOnline) {
+        try {
+          await fetch(`${API_DRIVER}/location`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + token
+            },
+            body: JSON.stringify({
+              latitude: lat,
+              longitude: lon
+            })
+          });
+        } catch (e) {
+          console.error("Erreur envoi position", e);
+        }
+      }
+    },
+    err => console.error("GPS erreur:", err),
+    { enableHighAccuracy: true }
+  );
+}
+
+/* ================================
+   En ligne / hors ligne
+================================ */
+document.getElementById("toggleStatus").onclick = () => {
+  isOnline = !isOnline;
+
+  document.getElementById("driverStatus").textContent =
+    isOnline ? "En ligne" : "Hors ligne";
+
+  document.getElementById("toggleStatus").textContent =
+    isOnline ? "Se mettre hors ligne" : "Se mettre en ligne";
+
+  document.getElementById("toggleStatus")
+    .classList.toggle("offline", !isOnline);
+};
+
+/* ================================
+   Courses disponibles
+================================ */
+document.getElementById("showRides").onclick = async () => {
+  try {
+    const res = await fetch("http://localhost:4000/api/ride/driver", {
+      headers: { Authorization: "Bearer " + token }
+    });
+
+    if (!res.ok) throw new Error();
+
+    const rides = await res.json();
+    displayRides(rides);
+    document.getElementById("ridesModal").style.display = "block";
+  } catch (err) {
+    alert("Erreur chargement courses");
+  }
+};
+
+function displayRides(rides) {
+  const list = document.getElementById("ridesList");
+  list.innerHTML = "";
+
+  if (rides.length === 0) {
+    list.innerHTML = "<p>Aucune course</p>";
+    return;
+  }
+
+  rides.forEach(ride => {
+    const div = document.createElement("div");
+    div.style.border = "1px solid #ddd";
+    div.style.padding = "10px";
+    div.style.margin = "5px 0";
+    div.style.borderRadius = "5px";
+    let actions = "";
+    if (ride.status === "accepted") {
+      actions = `<button onclick="startRide(${ride.id})">Démarrer</button>`;
+    } else if (ride.status === "in_progress") {
+      actions = `<button onclick="completeRide(${ride.id})">Terminer</button>`;
+    }
+    div.innerHTML = `
+      <p><strong>Client:</strong> ${ride.client.firstName} ${ride.client.lastName}</p>
+      <p><strong>Statut:</strong> ${ride.status}</p>
+      <p><strong>Départ:</strong> ${ride.pickupLat.toFixed(4)}, ${ride.pickupLng.toFixed(4)}</p>
+      ${ride.dropoffLat ? `<p><strong>Arrivée:</strong> ${ride.dropoffLat.toFixed(4)}, ${ride.dropoffLng.toFixed(4)}</p>` : ""}
+      ${actions}
+    `;
+    list.appendChild(div);
+  });
+}
+
+async function acceptRide(rideId) {
+  try {
+    const res = await fetch("http://localhost:4000/api/ride/accept", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token
+      },
+      body: JSON.stringify({ rideId })
+    });
+
+    if (res.ok) {
+      alert("Course acceptée !");
+      closeRidesModal();
+    } else {
+      alert("Erreur acceptation");
+    }
+  } catch (err) {
+    alert("Erreur réseau");
+  }
+}
+
+async function startRide(rideId) {
+  try {
+    const res = await fetch("http://localhost:4000/api/ride/start", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token
+      },
+      body: JSON.stringify({ rideId })
+    });
+
+    if (res.ok) {
+      alert("Course démarrée !");
+      closeRidesModal();
+    } else {
+      alert("Erreur démarrage");
+    }
+  } catch (err) {
+    alert("Erreur réseau");
+  }
+}
+
+async function completeRide(rideId) {
+  try {
+    const res = await fetch("http://localhost:4000/api/ride/complete", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token
+      },
+      body: JSON.stringify({ rideId })
+    });
+
+    if (res.ok) {
+      alert("Course terminée !");
+      closeRidesModal();
+    } else {
+      alert("Erreur fin");
+    }
+  } catch (err) {
+    alert("Erreur réseau");
+  }
+}
+
+function closeRidesModal() {
+  document.getElementById("ridesModal").style.display = "none";
+}
+
+/* ================================
+   Navigation
+================================ */
+function goGains() {
+  window.location.href = "chauffeur-gains.html";
+}
+
+function goCompte() {
+  window.location.href = "compte.html";
+}
+
+function logout() {
+  localStorage.clear();
+  window.location.replace("login.html");
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Safari Ngema CM — Connexion</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+:root{
+  --neon:#00ff9c;
+  --neon-blue:#00d9ff;
+  --dark:#050b10;
+  --glass:rgba(255,255,255,0.12);
+  --blur:blur(18px);
+}
+
+/* RESET */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family:'Poppins',sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background:
+    radial-gradient(circle at top, #0c1f2d, #020409 70%);
+  color:white;
+}
+
+/* FORMULAIRE GLASS */
+.container {
+  background:var(--glass);
+  backdrop-filter:var(--blur);
+  padding: 45px 50px;
+  border-radius: 20px;
+  box-shadow: 0 0 35px rgba(0,255,156,.4);
+  width: 420px;
+  max-width: 95%;
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border:1px solid rgba(255,255,255,.08);
+}
+
+.container:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0 50px rgba(0,255,156,.7);
+}
+
+h1 {
+  color: var(--neon);
+  margin-bottom: 30px;
+  font-size: 30px;
+  font-weight: 700;
+  text-shadow: 0 0 15px var(--neon);
+}
+
+.input-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  color: #ccc;
+  font-weight: 600;
+}
+
+input, select {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 10px;
+  font-size: 15px;
+  background:rgba(255,255,255,.1);
+  color:white;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+input::placeholder {
+  color: #aaa;
+}
+
+input:focus, select:focus {
+  border-color: var(--neon);
+  box-shadow: 0 0 10px rgba(0,255,156,.3);
+  outline: none;
+  background:rgba(255,255,255,.15);
+}
+
+button.btn {
+  width: 100%;
+  padding: 14px;
+  background:linear-gradient(135deg,var(--neon),var(--neon-blue));
+  color: #00140d;
+  font-size: 17px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: .35s;
+  box-shadow:
+    0 0 25px rgba(0,255,156,.7),
+    inset 0 0 12px rgba(255,255,255,.4);
+}
+
+button.btn:hover {
+  transform:translateY(-3px) scale(1.05);
+  box-shadow:0 0 45px rgba(0,255,156,1);
+}
+
+.link {
+  margin-top: 18px;
+  font-size: 14px;
+}
+
+.link a {
+  color: var(--neon-blue);
+  text-decoration: none;
+  font-weight: 700;
+  text-shadow:0 0 10px var(--neon-blue);
+}
+
+#loader {
+  margin: 12px 0;
+  color: var(--neon);
+  font-weight: bold;
+}
+
+/* CHECKBOX STYLE */
+.input-group input[type="checkbox"] {
+  width: auto;
+  margin-right: 8px;
+  accent-color: var(--neon);
+}
+
+/* ANIMATIONS */
+input, select, button {
+  transition: all 0.3s ease;
+}
+
+/* MOBILE */
+@media (max-width: 480px) {
+  .container {
+    width: 90%;
+    padding: 30px 20px;
+  }
+
+  h1 {
+    font-size: 24px;
+  }
+
+  input, select, button {
+    padding: 12px;
+    font-size: 15px;
+  }
+
+  .link {
+    font-size: 13px;
+  }
+}
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1>Connexion</h1>
+
+    <form id="loginForm">
+
+      <div class="input-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" required>
+      </div>
+
+      <div class="input-group">
+        <label for="password">Mot de passe</label>
+        <input type="password" id="password" required>
+      </div>
+
+      <div class="input-group">
+        <input type="checkbox" id="showPassword">
+        <label for="showPassword">Afficher le mot de passe</label>
+      </div>
+
+      <button type="submit" class="btn">Se connecter</button>
+    </form>
+
+    <p class="link">Pas de compte ? <a href="index.html">Créer un compte</a></p>
+  </div>
+
+  <script src="login.js"></script>
+</body>
+</html>

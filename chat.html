@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Chat — Safari Ngema CM</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=2">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root{--primary:#00ff9c;--bg:radial-gradient(circle at top, #0c1f2d, #020409 70%);--muted:#8b8f95}
+    *{box-sizing:border-box}
+    body{font-family:'Poppins',sans-serif;margin:0;background:var(--bg);color:#222}
+    .app{max-width:1000px;margin:18px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 6px 24px rgba(18,38,63,0.08);display:flex;min-height:70vh}
+    .sidebar{width:320px;border-right:1px solid rgba(255,255,255,.08);padding:16px;background:rgba(255,255,255,0.12);backdrop-filter:blur(18px)}
+    .main{flex:1;display:flex;flex-direction:column}
+    header{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #eee}
+    .title{font-weight:600;font-size:16px}
+    .role-badge{background:var(--primary);color:#fff;padding:6px 10px;border-radius:999px;font-weight:600;font-size:12px}
+    .peer-setup{margin-top:12px}
+    .peer-setup input{width:100%;padding:10px;border-radius:8px;border:1px solid #ddd}
+    .peer-setup button{margin-top:8px;width:100%;padding:10px;border-radius:8px;border:none;background:var(--primary);color:#fff;font-weight:600}
+    .conversations{margin-top:16px}
+    .conv{padding:10px;border-radius:8px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,.08);margin-bottom:8px;cursor:pointer}
+    .messages{padding:16px;flex:1;overflow:auto;background:linear-gradient(180deg,rgba(255,255,255,0.05), rgba(255,255,255,0.02))}
+    .msg{max-width:70%;padding:10px 12px;border-radius:12px;margin-bottom:10px;word-break:break-word}
+    .msg.me{background:var(--primary);color:#fff;margin-left:auto;border-bottom-right-radius:4px}
+    .msg.other{background:#fff;color:#111;border:1px solid #eceef0}
+    .composer{display:flex;padding:12px;border-top:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,0.12);backdrop-filter:blur(18px)}
+    .composer input{flex:1;padding:10px;border-radius:10px;border:1px solid #ddd}
+    .composer button{margin-left:8px;padding:10px 14px;border-radius:10px;background:var(--primary);color:#fff;border:none;font-weight:600}
+    .meta{font-size:13px;color:var(--muted)}
+    .small{font-size:13px;color:var(--muted);margin-top:6px}
+    @media(max-width:800px){.app{flex-direction:column}.sidebar{width:100%;border-right:none;border-bottom:1px solid #eee}}
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <div class="sidebar">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div class="title">Discussions</div>
+        <div class="small">Sélectionnez le correspondant ou entrez son ID</div>
+      </div>
+      <div id="roleBadge" class="role-badge">...</div>
+    </div>
+
+    <div class="peer-setup">
+      <input id="peerIdInput" placeholder="ID du correspondant (ex: 42)" />
+      <button id="setPeerBtn">Ouvrir la discussion</button>
+      <div class="small"></div>
+    </div>
+
+    <div class="conversations" id="conversationsList">
+      <!-- Liste des conversations -->
+    </div>
+  </div>
+
+  <div class="main">
+    <header>
+      <div style="flex:1">
+        <div id="headerTitle" class="title">Conversation</div>
+        <div id="headerSubtitle" class="meta">Aucun correspondant sélectionné</div>
+      </div>
+    </header>
+
+    <div id="messages" class="messages"></div>
+
+    <form id="chatForm" class="composer" autocomplete="off">
+      <input id="messageInput" placeholder="Écrire un message..." />
+      <button type="submit">Envoyer</button>
+    </form>
+  </div>
+</div>
+
+<script>
+const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:4000/api' : '/api';
+const token = localStorage.getItem('accessToken');
+let me = null;
+let peerId = null; // id du correspondant (driver ou client)
+let pollHandle = null;
+
+function qs(name){const u=new URL(location.href);return u.searchParams.get(name)}
+
+async function loadMe(){
+  if(!token) return null;
+  try{
+    const r = await fetch(API_BASE + '/auth/me',{headers:{Authorization:'Bearer '+token}});
+    if(!r.ok) return null;
+    me = await r.json();
+    document.getElementById('roleBadge').textContent = (me.role||'utilisateur').toUpperCase();
+    return me;
+  }catch(e){return null}
+}
+
+async function loadConversations(){
+  try{
+    const res = await fetch(API_BASE + '/chat', {headers:{Authorization:'Bearer '+token}});
+    if(!res.ok) return [];
+    const conversations = await res.json();
+    return conversations;
+  }catch(e){return []}
+}
+
+function renderConversations(conversations){
+  const list = document.getElementById('conversationsList');
+  list.innerHTML = '';
+  conversations.forEach(conv => {
+    const div = document.createElement('div');
+    div.className = 'conv';
+    div.textContent = conv.name;
+    div.onclick = () => selectPeer(conv.id, conv.name);
+    list.appendChild(div);
+  });
+}
+
+function selectPeer(id, name){
+  peerId = id;
+  localStorage.setItem('chatPeerId', peerId);
+  localStorage.setItem('chatPeerName', name);
+  showHeader();
+  restartPolling();
+}
+
+function showHeader(){
+  const title = document.getElementById('headerTitle');
+  const sub = document.getElementById('headerSubtitle');
+  if(!peerId){title.textContent='Conversation';sub.textContent='Aucun correspondant sélectionné';return}
+  const name = localStorage.getItem('chatPeerName') || ('ID ' + peerId);
+  title.textContent = 'Discussion avec ' + name;
+  sub.textContent = 'ID: ' + peerId;
+}
+
+async function loadMessages(){
+  if(!me) await loadMe();
+  if(!me) return; // not authenticated
+  if(!peerId) return;
+
+  try{
+    const res = await fetch(API_BASE + '/chat/' + peerId, {headers:{Authorization:'Bearer '+token}});
+    if(!res.ok) return;
+    const messages = await res.json();
+    renderMessages(messages);
+  }catch(e){console.error(e)}
+}
+
+function renderMessages(messages){
+  const box = document.getElementById('messages');
+  box.innerHTML = '';
+  messages.forEach(m => {
+    const d = document.createElement('div');
+    d.className = 'msg ' + (m.senderId === me.id ? 'me' : 'other');
+    d.textContent = m.content;
+    box.appendChild(d);
+  });
+  box.scrollTop = box.scrollHeight;
+}
+
+async function sendMessage(content){
+  if(!token || !peerId || !content) return;
+  // Optimistic UI
+  const box = document.getElementById('messages');
+  const d = document.createElement('div'); d.className='msg me'; d.textContent = content; box.appendChild(d); box.scrollTop = box.scrollHeight;
+
+  try{
+    await fetch(API_BASE + '/chat', {
+      method:'POST',
+      headers:{'Content-Type':'application/json', Authorization:'Bearer '+token},
+      body: JSON.stringify({receiverId: Number(peerId), content})
+    });
+    // reload to sync timestamps & other messages
+    setTimeout(loadMessages, 400);
+  }catch(e){console.error(e)}
+}
+
+// UI interactions
+document.getElementById('setPeerBtn').addEventListener('click', ()=>{
+  const v = document.getElementById('peerIdInput').value.trim();
+  if(!v) return alert('Entrez l\'ID du correspondant.');
+  peerId = v;
+  localStorage.setItem('chatPeerId', peerId);
+  showHeader();
+  restartPolling();
+});
+
+document.getElementById('chatForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const input = document.getElementById('messageInput');
+  const val = input.value.trim(); if(!val) return;
+  input.value = '';
+  sendMessage(val);
+});
+
+function restartPolling(){
+  if(pollHandle) clearInterval(pollHandle);
+  loadMessages();
+  pollHandle = setInterval(loadMessages, 2500);
+}
+
+async function init(){
+  await loadMe();
+
+  const conversations = await loadConversations();
+  renderConversations(conversations);
+
+  // Determine peerId from several possible sources
+  peerId = qs('peerId') || localStorage.getItem('chatDriverId') || localStorage.getItem('chatPeerId') || qs('peer');
+  const knownName = localStorage.getItem('chatPeerName');
+  if(peerId) document.getElementById('peerIdInput').value = peerId;
+  showHeader();
+  if(peerId) restartPolling();
+}
+
+init();
+</script>
+
+</body>
+</html>
