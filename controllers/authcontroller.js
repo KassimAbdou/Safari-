@@ -85,8 +85,10 @@ export const login = async (req, res) => {
     res.json({ accessToken, refreshToken, user });
 
   } catch (err) {
-    res.status(500).json({ error: "Erreur serveur" });
-  }
+  console.error("Login error:", err); // Ajoute ce log
+  res.status(500).json({ error: "Erreur serveur" });
+}
+
 };
 
 /* ME */
