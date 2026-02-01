@@ -21,10 +21,10 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
     if (!res.ok) {
   const errorText = await res.text();
   console.error("Erreur API:", res.status, errorText);
-  alert(result.error || "Erreur de connexion");
+  alert("Erreur de connexion : " + errorText);
   return;
 }
-  
+
 
     const result = await res.json();
 

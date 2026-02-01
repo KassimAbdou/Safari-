@@ -29,11 +29,6 @@ app.use('/api/geo', geoRoutes);
 app.use('/api/ride', rideRoutes);
 app.use('/api/transport', transportRoutes);
 
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
 // Exporter l'app pour Vercel si nécessaire
 export default app;
 
