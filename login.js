@@ -18,6 +18,14 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
       credentials: "include"  // <-- Ajouté pour permettre l'envoi des cookies
     });
 
+    if (!res.ok) {
+  const errorText = await res.text();
+  console.error("Erreur API:", res.status, errorText);
+  alert(result.error || "Erreur de connexion");
+  return;
+}
+  
+
     const result = await res.json();
 
     if (!res.ok) {
@@ -39,7 +47,8 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
       window.location.href = "accueil.html";
     }
 
-  } catch (err) {
-    alert("Erreur de connexion au serveur");
-  }
+  }catch (err) {
+  console.error("Fetch error:", err);
+  alert("Erreur de connexion au serveur");
+}
 });

@@ -12,9 +12,10 @@ import transportRoutes from './routes/transport.js';
 const app = express();
 
 app.use(cors({
-  origin: ['https://safari-kassim-abdous-projects.vercel.app/', 'http://localhost:3000'],
+  origin: ['https://ton-site.vercel.app', 'http://localhost:3000'],
   credentials: true
 }));
+
 
 
 app.use(express.json());
