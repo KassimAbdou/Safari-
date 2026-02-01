@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   const parsedUrl = parse(req.url, true);
 
   await new Promise((resolve) => {
-    server.emit('request', req, res);
+    server.emit('request', req, res, parsedUrl);
     res.on('finish', resolve);
   });
 }

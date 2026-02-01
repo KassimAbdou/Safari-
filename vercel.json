@@ -10,6 +10,16 @@
     {
       "src": "/api/(.*)",
       "dest": "/api/index.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
     }
-  ]
+  ],
+  "env": {
+    "ACCESS_TOKEN_SECRET": "@access_token_secret",
+    "REFRESH_TOKEN_SECRET": "@refresh_token_secret",
+    "DATABASE_URL": "@database_url",
+    "PORT": "4000"
+  }
 }
