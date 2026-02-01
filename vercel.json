@@ -17,9 +17,9 @@
     }
   ],
   "env": {
-    "ACCESS_TOKEN_SECRET": "@access_token_secret",
-    "REFRESH_TOKEN_SECRET": "@refresh_token_secret",
-    "DATABASE_URL": "@database_url",
-    "PORT": "4000"
+    "DATABASE_URL": "postgresql://postgres:KIEctdGVcXgFXAQVXHdGcCHPByjdprAe@turntable.proxy.rlwy.net:18132/railway",
+    "ACCESS_TOKEN_SECRET": "supersecretaccesstokenkey123456789abcdef",
+    "REFRESH_TOKEN_SECRET": "supersecretrefreshtokenkey987654321fedcba",
+    "JWT_SECRET": "supersecretaccesstokenkey123456789abcdef"
   }
 }
