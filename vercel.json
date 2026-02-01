@@ -13,13 +13,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/$1"
+      "dest": "/index.html"
     }
-  ],
-  "env": {
-    "DATABASE_URL": "postgresql://postgres:KIEctdGVcXgFXAQVXHdGcCHPByjdprAe@turntable.proxy.rlwy.net:18132/railway",
-    "ACCESS_TOKEN_SECRET": "supersecretaccesstokenkey123456789abcdef",
-    "REFRESH_TOKEN_SECRET": "supersecretrefreshtokenkey987654321fedcba",
-    "JWT_SECRET": "supersecretaccesstokenkey123456789abcdef"
-  }
+  ]
 }
