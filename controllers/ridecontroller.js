@@ -1,5 +1,6 @@
-const { PrismaClient } = require("@prisma/client");
-const jwt = require("jsonwebtoken");
+import { PrismaClient } from "@prisma/client";
+import jwt from "jsonwebtoken";
+
 const prisma = new PrismaClient();
 
 /* 🔐 util */
@@ -12,7 +13,7 @@ function getUserId(req) {
 /* ================================
    📍 Créer une course
 ================================ */
-exports.createRide = async (req, res) => {
+export const createRide = async (req, res) => {
   try {
     const userId = getUserId(req);
     const { pickupLat, pickupLng, dropoffLat, dropoffLng, driverId } = req.body;
@@ -42,14 +43,14 @@ exports.createRide = async (req, res) => {
 /* ================================
    📋 Mes courses (client)
 ================================ */
-exports.getMyRides = async (req, res) => {
+export const getMyRides = async (req, res) => {
   try {
     const userId = getUserId(req);
     const rides = await prisma.ride.findMany({
       where: { clientId: userId },
       include: {
         driver: {
-          select: { firstName: true, lastName: true, phone: true }
+          select: { firstName: true, lastName: true, lastName: true, phone: true }
         }
       },
       orderBy: { createdAt: "desc" }
@@ -63,7 +64,7 @@ exports.getMyRides = async (req, res) => {
 /* ================================
    🚕 Mes courses (chauffeur)
 ================================ */
-exports.getMyDriverRides = async (req, res) => {
+export const getMyDriverRides = async (req, res) => {
   try {
     const userId = getUserId(req);
     const rides = await prisma.ride.findMany({
@@ -82,9 +83,29 @@ exports.getMyDriverRides = async (req, res) => {
 };
 
 /* ================================
+   📋 Courses disponibles (chauffeur)
+================================ */
+export const getAvailableRides = async (req, res) => {
+  try {
+    const rides = await prisma.ride.findMany({
+      where: { status: "requested" },
+      include: {
+        client: {
+          select: { firstName: true, lastName: true, phone: true, island: true }
+        }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+    res.json(rides);
+  } catch (err) {
+    res.status(500).json({ error: "Erreur récupération courses disponibles" });
+  }
+};
+
+/* ================================
    ✅ Accepter une course (chauffeur)
 ================================ */
-exports.acceptRide = async (req, res) => {
+export const acceptRide = async (req, res) => {
   try {
     const userId = getUserId(req);
     const { rideId } = req.body;
@@ -103,7 +124,7 @@ exports.acceptRide = async (req, res) => {
 /* ================================
    🚀 Démarrer course
 ================================ */
-exports.startRide = async (req, res) => {
+export const startRide = async (req, res) => {
   try {
     const userId = getUserId(req);
     const { rideId } = req.body;
@@ -128,7 +149,7 @@ exports.startRide = async (req, res) => {
 /* ================================
    🏁 Terminer course
 ================================ */
-exports.completeRide = async (req, res) => {
+export const completeRide = async (req, res) => {
   try {
     const userId = getUserId(req);
     const { rideId } = req.body;
@@ -149,3 +170,37 @@ exports.completeRide = async (req, res) => {
     res.status(500).json({ error: "Erreur fin course" });
   }
 };
+
+/* ================================
+   📍 Partager position avec chauffeur
+================================ */
+export const shareLocation = async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const { driverId, latitude, longitude } = req.body;
+
+    // Ici, on peut stocker la position partagée, ou notifier le chauffeur
+    // Pour l'instant, on simule en créant une entrée ou en loggant
+
+    console.log(`Position partagée par client ${userId} avec chauffeur ${driverId}: ${latitude}, ${longitude}`);
+
+    // Peut-être envoyer une notification ou créer une course
+
+    res.json({ message: "Position partagée avec succès" });
+  } catch (err) {
+    res.status(500).json({ error: "Erreur lors du partage de la position" });
+  }
+};
+
+const rideController = {
+  createRide,
+  getMyRides,
+  getAvailableRides,
+  getMyDriverRides,
+  acceptRide,
+  startRide,
+  completeRide,
+  shareLocation
+};
+
+export default rideController;

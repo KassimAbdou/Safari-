@@ -13,6 +13,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static('.'));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -22,5 +23,21 @@ app.use('/api/geo', geoRoutes);
 app.use('/api/ride', rideRoutes);
 app.use('/api/transport', transportRoutes);
 
-// Exporter l'app pour Vercel
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+// Exporter l'app pour Vercel si nécessaire
 export default app;
+
+
+
+app.get("/api/test-db", async (req, res) => {
+  try {
+    const result = await (await import("./db.js")).default.query("SELECT NOW()");
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});

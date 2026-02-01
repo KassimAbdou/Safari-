@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:4000/api/auth";
+const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:4000/api/auth' : '/api/auth';
 
 document.getElementById("loginForm").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -18,7 +18,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
     const result = await res.json();
 
     if (!res.ok) {
-      alert(result.message || "Erreur de connexion");
+      alert(result.error || "Erreur de connexion");
       return;
     }
 

@@ -109,7 +109,8 @@ export const me = async (req, res) => {
 };
 
 /* REFRESH */
-exports.refresh = async (req, res) => {
+export const refresh = async (req, res) => {
+
   try {
     const { refreshToken } = req.body;
 
@@ -218,3 +219,15 @@ export const findDriver = async (req, res) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 };
+
+const authController = {
+  register,
+  login,
+  me,
+  refresh,
+  logout,
+  updateProfile,
+  findDriver
+};
+
+export default authController;

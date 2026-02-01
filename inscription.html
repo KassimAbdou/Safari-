@@ -241,7 +241,7 @@ input, select, button {
   </div>
 
 <script>
-  const API_URL = "http://localhost:4000/api/auth";
+  const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:4000/api/auth' : '/api/auth';
 
   // Affichage du mot de passe
   document.getElementById("showPassword").addEventListener("change", function () {

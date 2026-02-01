@@ -1,6 +1,8 @@
 import express from 'express';
 import auth from '../middleware/auth.js';
 import controller from '../controllers/userController.js';
+import pool from "../db.js";
+
 
 const router = express.Router();
 

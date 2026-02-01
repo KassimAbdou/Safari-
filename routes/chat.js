@@ -2,6 +2,8 @@ import express from "express";
 const router = express.Router();
 import auth from "../middleware/auth.js";
 import { PrismaClient } from "@prisma/client";
+import pool from "../db.js";
+
 
 const prisma = new PrismaClient();
 
@@ -20,75 +22,64 @@ router.post("/", auth, async (req, res) => {
     data: {
       senderId,
       receiverId,
-      content
-    }
+      content,
+    },
   });
 
   res.json(message);
 });
 
 /* =====================================
-   🔄 Charger discussion client ↔ chauffeur
+   📨 Récupérer les messages
 ===================================== */
-router.get("/:peerId", auth, async (req, res) => {
+router.get("/", auth, async (req, res) => {
   const userId = req.user.id;
-  const peerId = parseInt(req.params.peerId);
+  const { otherUserId } = req.query;
 
   const messages = await prisma.message.findMany({
     where: {
       OR: [
-        { senderId: userId, receiverId: peerId },
-        { senderId: peerId, receiverId: userId }
-      ]
+        { senderId: userId, receiverId: otherUserId },
+        { senderId: otherUserId, receiverId: userId },
+      ],
     },
-    orderBy: { createdAt: "asc" }
+    orderBy: { createdAt: "asc" },
   });
 
   res.json(messages);
 });
 
 /* =====================================
-   📋 Liste des conversations pour un utilisateur
+   👥 Conversations
 ===================================== */
-router.get("/", auth, async (req, res) => {
+router.get("/conversations", auth, async (req, res) => {
   const userId = req.user.id;
 
-  // Trouver tous les interlocuteurs avec qui l'utilisateur a échangé
-  const sentMessages = await prisma.message.findMany({
-    where: { senderId: userId },
-    select: { receiverId: true, receiver: { select: { firstName: true, lastName: true, phone: true, island: true } } }
+  const conversations = await prisma.message.findMany({
+    where: {
+      OR: [{ senderId: userId }, { receiverId: userId }],
+    },
+    include: {
+      sender: { select: { id: true, firstName: true, lastName: true } },
+      receiver: { select: { id: true, firstName: true, lastName: true } },
+    },
+    orderBy: { createdAt: "desc" },
   });
 
-  const receivedMessages = await prisma.message.findMany({
-    where: { receiverId: userId },
-    select: { senderId: true, sender: { select: { firstName: true, lastName: true, phone: true, island: true } } }
-  });
-
-  const conversations = {};
-
-  sentMessages.forEach(msg => {
-    if (!conversations[msg.receiverId]) {
-      conversations[msg.receiverId] = {
-        id: msg.receiverId,
-        name: `${msg.receiver.firstName} ${msg.receiver.lastName}`,
-        phone: msg.receiver.phone,
-        island: msg.receiver.island
+  // Grouper par conversation
+  const convMap = {};
+  conversations.forEach((msg) => {
+    const otherId = msg.senderId === userId ? msg.receiverId : msg.senderId;
+    const otherUser = msg.senderId === userId ? msg.receiver : msg.sender;
+    if (!convMap[otherId]) {
+      convMap[otherId] = {
+        user: otherUser,
+        lastMessage: msg,
       };
     }
   });
 
-  receivedMessages.forEach(msg => {
-    if (!conversations[msg.senderId]) {
-      conversations[msg.senderId] = {
-        id: msg.senderId,
-        name: `${msg.sender.firstName} ${msg.sender.lastName}`,
-        phone: msg.sender.phone,
-        island: msg.sender.island
-      };
-    }
-  });
-
-  res.json(Object.values(conversations));
+  res.json(Object.values(convMap));
 });
 
 export default router;

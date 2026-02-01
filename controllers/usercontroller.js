@@ -19,3 +19,10 @@ export const updateProfile = async (req, res, next) => {
     res.json(updated);
   } catch (err) { next(err); }
 };
+
+const userController = {
+  getProfile,
+  updateProfile
+};
+
+export default userController;

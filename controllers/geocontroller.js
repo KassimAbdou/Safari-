@@ -1,34 +1,34 @@
-const prisma = require('../lib/prisma');
+import prisma from '../src/lib/prisma.js';
 
-module.exports = {
-  listIslands: async (req, res, next) => {
-    try {
-      const islands = await prisma.island.findMany({
-        include: { cities: true }
-      });
-      res.json(islands);
-    } catch (err) { next(err); }
-  },
-
-  listCities: async (req, res, next) => {
-    try {
-      const where = req.query.islandId
-        ? { islandId: Number(req.query.islandId) }
-        : {};
-
-      const cities = await prisma.city.findMany({ where });
-      res.json(cities);
-    } catch (err) { next(err); }
-  },
-
-  listZones: async (req, res, next) => {
-    try {
-      const where = req.query.cityId
-        ? { cityId: Number(req.query.cityId) }
-        : {};
-
-      const zones = await prisma.zone.findMany({ where });
-      res.json(zones);
-    } catch (err) { next(err); }
-  }
+export const listIslands = async (req, res, next) => {
+  try {
+    const islands = await prisma.island.findMany({
+      include: { cities: true }
+    });
+    res.json(islands);
+  } catch (err) { next(err); }
 };
+
+export const listCities = async (req, res, next) => {
+  try {
+    const where = req.query.islandId
+      ? { islandId: Number(req.query.islandId) }
+      : {};
+
+    const cities = await prisma.city.findMany({ where });
+    res.json(cities);
+  } catch (err) { next(err); }
+};
+
+export const listZones = async (req, res, next) => {
+  try {
+    const where = req.query.cityId
+      ? { cityId: Number(req.query.cityId) }
+      : {};
+
+    const zones = await prisma.zone.findMany({ where });
+    res.json(zones);
+  } catch (err) { next(err); }
+};
+
+export default { listIslands, listCities, listZones };

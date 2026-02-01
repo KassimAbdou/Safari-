@@ -1,6 +1,9 @@
 import express from "express";
 import { body } from "express-validator";
 import controller from "../controllers/authController.js";
+import pool from "../db.js";
+
+
 
 const router = express.Router();
 

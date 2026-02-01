@@ -1,7 +1,8 @@
 import express from "express";
 const router = express.Router();
-import controller from "../controllers/rideController.js";
+import controller from "../controllers/driverController.js";
 import auth from "../middleware/auth.js";
+import pool from "../db.js";
 
 router.post("/", auth, controller.createRide);
 router.get("/my", auth, controller.getMyRides);

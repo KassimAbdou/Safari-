@@ -1,5 +1,6 @@
-const { PrismaClient } = require("@prisma/client");
-const jwt = require("jsonwebtoken");
+import { PrismaClient } from "@prisma/client";
+import jwt from "jsonwebtoken";
+
 const prisma = new PrismaClient();
 
 /* 🔐 util */
@@ -12,7 +13,7 @@ function getUserId(req) {
 /* ===============================
    📡 Update position chauffeur
 ================================ */
-exports.updateLocation = async (req, res) => {
+export const updateLocation = async (req, res) => {
   try {
     const userId = getUserId(req);
     const { latitude, longitude } = req.body;
@@ -32,7 +33,7 @@ exports.updateLocation = async (req, res) => {
 /* ===============================
    🚕 Chauffeurs proches (client)
 ================================ */
-exports.getNearbyDrivers = async (req, res) => {
+export const getNearbyDrivers = async (req, res) => {
   const drivers = await prisma.driverLocation.findMany({
     include: {
       user: {
@@ -51,7 +52,7 @@ exports.getNearbyDrivers = async (req, res) => {
 /* ===============================
    💰 Gains chauffeur
 ================================ */
-exports.getEarnings = async (req, res) => {
+export const getEarnings = async (req, res) => {
   try {
     const userId = getUserId(req);
 
@@ -67,3 +68,11 @@ exports.getEarnings = async (req, res) => {
     res.status(401).json({ error: "Non autorisé" });
   }
 };
+
+const driverController = {
+  updateLocation,
+  getNearbyDrivers,
+  getEarnings
+};
+
+export default driverController;
