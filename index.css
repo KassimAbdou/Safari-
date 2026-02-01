@@ -89,7 +89,7 @@ body{
 .front-page{
   background:
     linear-gradient(135deg, rgba(0,194,168,.35), rgba(46,204,113,.25)),
-    url("COMO.jpg") center/cover no-repeat;
+    url("image/como.jpg") center/cover no-repeat;
   display:flex;
   align-items:flex-end;
 }

@@ -11,9 +11,14 @@ import transportRoutes from './routes/transport.js';
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: ['https://ton-site.vercel.app', 'http://localhost:3000'],
+  credentials: true
+}));
+
+
 app.use(express.json());
-app.use(express.static('.'));
+app.use(express.static('image'));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
